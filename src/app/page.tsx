@@ -18,7 +18,7 @@ export default function Home() {
 );
 `);
 
-  const { completion, handleSubmit, input, handleInputChange } = useCompletion({
+  const { setInput, setCompletion, completion, handleSubmit, input, handleInputChange } = useCompletion({
     api: '/api/generate-sql',
     body: {
       schema,
@@ -57,7 +57,14 @@ export default function Home() {
           />
           <path d='M107.975 2.32178H110.171V19.5853H118V21.4202H107.975V2.32178Z' fill='#2DFF0B' />
         </svg>
-        <button type='button'>
+        <button
+          type='button'
+          onClick={() => {
+            setSchema('');
+            setInput('');
+            setCompletion('');
+          }}
+        >
           <Trash2 className='h-8 w-8 text-snow' strokeWidth={0.8} />
         </button>
       </header>
