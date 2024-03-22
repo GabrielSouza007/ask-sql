@@ -9,7 +9,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.parameterHints.enabled": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true
+    "source.organizeImports": "explicit"
   },
 
   // prettier
@@ -20,7 +20,7 @@
   "prettier.enable": true,
   "prettier.singleQuote": true,
   "prettier.tabWidth": 2,
-  "prettier.semi": true,
+  "prettier.semi": false,
   "prettier.jsxSingleQuote": true,
   "prettier.bracketSameLine": false,
   "prettier.endOfLine": "auto",

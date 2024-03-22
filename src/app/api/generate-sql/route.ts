@@ -1,39 +1,57 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai';
-import { Configuration, OpenAIApi } from 'openai-edge';
+import { defaultSafetySettings, mapSafetySettings } from "@/constants/safety-settings-mapper";
+import { sqlFormSchema } from "@/validation/sql";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAIStream, StreamingTextResponse } from "ai";
 
-export const runtime = 'edge';
+export const runtime = "edge";
+const api_key = process.env.GEMINI_AI_API_KEY ?? ''
+export const gemini = new GoogleGenerativeAI(
+  api_key
+);
 
-const apiConfig = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+export async function POST(request: Request) {
+    const parseResult = sqlFormSchema.safeParse(await request.json());
 
-const openai = new OpenAIApi(apiConfig);
+  if (!parseResult.success) {
+    return new Response(JSON.stringify({ error: "Invalid request data" }), {
+      status: 400,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
 
-export async function POST(req: Request) {
-  const { schema, prompt } = await req.json();
+  const { schema, prompt } = parseResult.data;
 
-  const message = `
-  Your job is to create SQL queries from the SQL schema below:
+  const message = 
+  `Você como um especialista em SQL, deve criar queries em SQL a partir de um schema SQL abaixo, sem a inserção de crases antes e depois das respostas.
 
-  Schema SQL:
-  """
-  ${schema}
-  """
-  From the schema above, write an SQL query from the request below.
-  Return ONLY the SQL code, nothing else
+    Schema SQL: 
 
-  Request: ${prompt}
-  `.trim();
+    ${schema}
 
-  const response = await openai.createChatCompletion({
-    model: 'gpt-3.5-turbo',
-    stream: true,
-    messages: [{ role: 'user', content: message }],
-  });
+    A partir do schema acima, escreva uma query SQL a partir da solicitação abaixo:
 
-  console.log(response);
+    Solicitação:
 
-  const stream = OpenAIStream(response);
+    ${prompt}
+
+    É importante que retorne somente a resposta, nada além disso.`;
+
+  const mappedSafetySettings = mapSafetySettings(defaultSafetySettings);
+
+  const geminiStream = await gemini
+    .getGenerativeModel({
+      model: "gemini-pro",
+      safetySettings: mappedSafetySettings,
+      generationConfig: {
+        maxOutputTokens: 2000,
+        temperature: 0.7,
+      },
+    })
+    .generateContentStream([message]);
+
+  const stream = GoogleGenerativeAIStream(geminiStream);
 
   return new StreamingTextResponse(stream);
 }
