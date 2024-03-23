@@ -1,12 +1,9 @@
 import { defaultSafetySettings, mapSafetySettings } from '@/constants/safety-settings-mapper'
+import { gemini } from '@/lib/gemini'
 import { sqlFormSchema } from '@/validation/sql'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { GoogleGenerativeAIStream, StreamingTextResponse } from 'ai'
 
 export const runtime = 'edge'
-const api_key = process.env.GEMINI_AI_API_KEY ?? ''
-const gemini = new GoogleGenerativeAI(api_key)
-
 export async function POST(request: Request) {
   const parseResult = sqlFormSchema.safeParse(await request.json())
 
