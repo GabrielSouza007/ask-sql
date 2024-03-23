@@ -1,30 +1,27 @@
-import { defaultSafetySettings, mapSafetySettings } from "@/constants/safety-settings-mapper";
-import { sqlFormSchema } from "@/validation/sql";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleGenerativeAIStream, StreamingTextResponse } from "ai";
+import { defaultSafetySettings, mapSafetySettings } from '@/constants/safety-settings-mapper'
+import { sqlFormSchema } from '@/validation/sql'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAIStream, StreamingTextResponse } from 'ai'
 
-export const runtime = "edge";
+export const runtime = 'edge'
 const api_key = process.env.GEMINI_AI_API_KEY ?? ''
-export const gemini = new GoogleGenerativeAI(
-  api_key
-);
+const gemini = new GoogleGenerativeAI(api_key)
 
 export async function POST(request: Request) {
-    const parseResult = sqlFormSchema.safeParse(await request.json());
+  const parseResult = sqlFormSchema.safeParse(await request.json())
 
   if (!parseResult.success) {
-    return new Response(JSON.stringify({ error: "Invalid request data" }), {
+    return new Response(JSON.stringify({ error: 'Invalid request data' }), {
       status: 400,
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
-    });
+    })
   }
 
-  const { schema, prompt } = parseResult.data;
+  const { schema, prompt } = parseResult.data
 
-  const message = 
-  `Você como um especialista em SQL, deve criar queries em SQL a partir de um schema SQL abaixo, sem a inserção de crases antes e depois das respostas.
+  const message = `Você como um especialista em SQL, deve criar queries em SQL a partir de um schema SQL abaixo, sem a inserção de crases antes e depois das respostas.
 
     Schema SQL: 
 
@@ -36,22 +33,22 @@ export async function POST(request: Request) {
 
     ${prompt}
 
-    É importante que retorne somente a resposta, nada além disso.`;
+    É importante que retorne somente a resposta, nada além disso.`
 
-  const mappedSafetySettings = mapSafetySettings(defaultSafetySettings);
+  const mappedSafetySettings = mapSafetySettings(defaultSafetySettings)
 
   const geminiStream = await gemini
     .getGenerativeModel({
-      model: "gemini-pro",
+      model: 'gemini-pro',
       safetySettings: mappedSafetySettings,
       generationConfig: {
         maxOutputTokens: 2000,
         temperature: 0.7,
       },
     })
-    .generateContentStream([message]);
+    .generateContentStream([message])
 
-  const stream = GoogleGenerativeAIStream(geminiStream);
+  const stream = GoogleGenerativeAIStream(geminiStream)
 
-  return new StreamingTextResponse(stream);
+  return new StreamingTextResponse(stream)
 }
